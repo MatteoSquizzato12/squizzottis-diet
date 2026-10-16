@@ -1,7 +1,7 @@
 // Service worker: tiene in memoria i file dell'app così si apre anche senza rete.
 // I dati (Supabase) passano sempre dalla rete: qui non vengono mai salvati.
 // Ad ogni rilascio che cambia i file, aumentare VERSION.
-const VERSION = "sd-2";
+const VERSION = "sd-3";
 const SHELL = [
   "./", "index.html", "app.css", "app.js", "config.js", "manifest.webmanifest",
   "fonts/akira-super-bold.woff2", "icons/icon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png",
@@ -19,7 +19,7 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET" || url.hostname.endsWith("supabase.co")) return;
   if (url.origin === location.origin) {
     // File dell'app: prima la rete (così arrivano gli aggiornamenti), poi la copia salvata.
-    e.respondWith(fetch(req).then(r => { if (r.ok) { const c = r.clone(); caches.open(VERSION).then(x => x.put(req, c)); } return r; })
+    e.respondWith(fetch(req, { cache: "no-cache" }).then(r => { if (r.ok) { const c = r.clone(); caches.open(VERSION).then(x => x.put(req, c)); } return r; })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match("index.html"))));
   } else if (/^(cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)$/.test(url.hostname)) {
     // Librerie e font con versione fissa: prima la copia salvata.

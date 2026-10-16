@@ -422,7 +422,15 @@ async function loadDiete(){
   const {data,error}=await sb.from("diete").select("persona,dieta,aggiornato,fonte");
   if(error){ if(!ready){ sync="local"; loadMsg="Non riesco a caricare i piani: controlla la connessione e riapri l'app."; } renderAll(); return; }
   if(applyDiete(data)){ LS.set("diete",data); if(sheetCtx&&!DIETE[sheetCtx.p].pasti[sheetCtx.pid])closeSheet(); }
-  else if(!ready) loadMsg="<b>Piani non disponibili</b>Questo account non è abilitato, oppure le diete non sono ancora state caricate su Supabase.";
+  else if(!ready){
+    const {data:me}=await sb.from("membri").select("persona").eq("user_id",user.id).maybeSingle();
+    const mail=esc(user.email||"");
+    if(!me) loadMsg=`<b>Account non abilitato</b>Hai fatto l'accesso come ${mail}, ma questo account non è nella tabella "membri" di Supabase.<br><br><button class="btn ghost" data-act="logout">Esci</button>`;
+    else{
+      const have=(data||[]).map(r=>r.persona), miss=PERSONE.filter(p=>!have.includes(p));
+      loadMsg=`<b>Diete mancanti</b>Accesso come ${mail} (${esc(me.persona)}): ok. Su Supabase manca la dieta di ${esc(miss.join(" e "))}.<br><br><button class="btn ghost" data-act="logout">Esci</button>`;
+    }
+  }
   renderAll();
 }
 
