@@ -384,17 +384,22 @@ table.week tr.prow > td:last-child{border-radius:0 24px 24px 0;padding-right:10p
 .prow .cell.libero{background:repeating-linear-gradient(135deg,transparent 0 9px,rgb(30 32 33 / .07) 9px 18px),var(--fill)}
 
 /* Griglia dei giorni in sottofondo alla vista settimana */
-.weekgrid{position:relative;min-width:1060px}
-.daycols{position:absolute;inset:0;display:grid;grid-template-columns:124px repeat(7,1fr);pointer-events:none;z-index:0}
-.daycols span+span{border-left:1px solid var(--line)}
-.daycols span:nth-child(odd):not(:first-child){background:rgb(30 32 33 / .035)}
-.daycols span:last-child{border-right:1px solid var(--line)}
-.daycols span.today{background:var(--yellow-soft)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .daycols span:nth-child(odd):not(:first-child){background:rgb(255 255 255 / .03)}}
-:root[data-theme="dark"] .daycols span:nth-child(odd):not(:first-child){background:rgb(255 255 255 / .03)}
+/* Colonne: nome del pasto (136px), persona (112px), 7 giorni */
+.weekgrid{position:relative;min-width:1180px}
+.daycols{position:absolute;inset:0;display:grid;grid-template-columns:136px 112px repeat(7,1fr);pointer-events:none;z-index:0}
+.daycols span.d{border-left:1px solid var(--line)}
+.daycols span.d:last-child{border-right:1px solid var(--line)}
+.daycols span.alt{background:rgb(30 32 33 / .035)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .daycols span.alt{background:rgb(255 255 255 / .03)}}
+:root[data-theme="dark"] .daycols span.alt{background:rgb(255 255 255 / .03)}
+.daycols span.d.today{background:rgb(250 184 12 / .28)}
 table.week{position:relative;z-index:1;min-width:0;width:100%}
-table.week col.c-rowh{width:124px}
+table.week col.c-meal{width:136px} table.week col.c-rowh{width:112px}
 /* Divisori tra i giorni dentro le fasce */
 .prow.p-anna{--div:rgb(30 32 33 / .22)} .prow.p-matteo{--div:rgb(255 255 255 / .2)}
 table.week tr.prow > td + td{background-image:linear-gradient(var(--div),var(--div));background-size:1px 70%;background-position:0 50%;background-repeat:no-repeat}
-.daycols span.today:not(:first-child):nth-child(n){background:rgb(250 184 12 / .28)}
+/* Nome del pasto di lato, accanto alle fasce delle persone */
+table.week tr > th.mealside,table.week tr.prow > th.mealside{background:var(--bg);color:var(--ink);border-radius:0;border:0;padding:0 10px 0 0;vertical-align:middle;text-align:left;position:sticky;left:0;z-index:2}
+.mealside .pasto{display:flex;flex-direction:column;align-items:flex-start;gap:7px;font-family:var(--f-display);font-weight:800;text-transform:uppercase;font-size:12.5px;letter-spacing:.03em;line-height:1.1}
+table.week tr.prow > .rowh{position:static;width:112px}
+table.week tr.gap > td{height:12px;padding:0;border:0;background:transparent}

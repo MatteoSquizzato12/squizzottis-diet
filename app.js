@@ -261,12 +261,12 @@ const badge=p=>`<span class="badge" aria-hidden="true">${esc(DIETE[p].nome[0])}<
 function renderWeek(){
   const ti=todayIdx(), ps=persons();
   // Griglia in sottofondo: una colonna per giorno, oggi evidenziato.
-  const cols=`<div class="daycols" aria-hidden="true"><span></span>${[0,1,2,3,4,5,6].map(d=>`<span class="${d===ti?"today":""}"></span>`).join("")}</div>`;
-  let h=`<div class="tablewrap"><div class="weekgrid">${cols}<table class="week"><colgroup><col class="c-rowh"><col span="7"></colgroup><thead><tr><th class="rowh"></th>${[0,1,2,3,4,5,6].map(d=>`<th class="dayh${d===ti?" today":""}${d>4?" we":""}"><span class="dw">${G3[d]}</span><b>${dayDate(d).getDate()}</b></th>`).join("")}</tr></thead><tbody>`;
+  const cols=`<div class="daycols" aria-hidden="true"><span></span><span></span>${[0,1,2,3,4,5,6].map(d=>`<span class="d${d%2?" alt":""}${d===ti?" today":""}"></span>`).join("")}</div>`;
+  let h=`<div class="tablewrap"><div class="weekgrid">${cols}<table class="week"><colgroup><col class="c-meal"><col class="c-rowh"><col span="7"></colgroup><thead><tr><th class="mealside"></th><th class="rowh"></th>${[0,1,2,3,4,5,6].map(d=>`<th class="dayh${d===ti?" today":""}${d>4?" we":""}"><span class="dw">${G3[d]}</span><b>${dayDate(d).getDate()}</b></th>`).join("")}</tr></thead><tbody>`;
   for(const [pid,nome] of PASTI){
     const rows=ps.filter(p=>DIETE[p].pasti[pid]); if(!rows.length)continue;
-    h+=`<tr class="meal-h"><th colspan="8"><span class="pasto">${mealTitle(pid,nome)}</span></th></tr>`;
-    rows.forEach(p=>{h+=`<tr class="p-${p} prow"><th class="rowh">${badge(p)}<span class="who">${DIETE[p].nome}</span></th>${[0,1,2,3,4,5,6].map(d=>`<td>${cellHTML(p,d,pid)}</td>`).join("")}</tr>`;});
+    h+=`<tr class="gap"><td colspan="9"></td></tr>`;
+    rows.forEach((p,j)=>{h+=`<tr class="p-${p} prow">${j===0?`<th class="mealside" rowspan="${rows.length}" scope="rowgroup"><span class="pasto">${mealTitle(pid,nome)}</span></th>`:""}<th class="rowh">${badge(p)}<span class="who">${DIETE[p].nome}</span></th>${[0,1,2,3,4,5,6].map(d=>`<td>${cellHTML(p,d,pid)}</td>`).join("")}</tr>`;});
   }
   return h+`</tbody></table></div></div>`;
 }
