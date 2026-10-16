@@ -376,3 +376,4 @@ table.week tr.prow > td:last-child{border-radius:0 24px 24px 0;padding-right:10p
 .band{background-color:var(--yellow);background-image:var(--allos-pattern);background-size:190px auto;background-position:0 0;background-repeat:repeat}
 @media (max-width:640px){.band{background-image:var(--allos-pattern);background-size:150px auto}}
 .banner{background-image:var(--allos-pattern);background-size:150px auto}
+.logo .heart{fill:#FFFFFF} .logo .core{fill:var(--on-yellow)}
