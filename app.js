@@ -440,7 +440,7 @@ function showLogin(msg){
   const er=$("login-err"); er.hidden=!msg; er.textContent=msg||"";
 }
 async function start(){
-  document.body.className="signed-in"; $("login").hidden=true; $("app").hidden=false;
+  document.body.className="signed-in"; $("login").hidden=true; $("app").hidden=false; loadMsg="Carico i piani…";
   applyDiete(LS.get("diete"));
   if(!queue.length) queue.push(...(LS.get("queue")||[]));
   subscribe();
@@ -453,8 +453,11 @@ async function start(){
   pump();
 }
 async function signOut(){
-  await sb.auth.signOut();
-  queue.length=0; LS.clear(); DIETE={}; ready=false; plan=emptyPlan();
+  try{ await sb.auth.signOut({scope:"local"}); }catch(e){}
+  try{ for(const k of Object.keys(localStorage)) if(/^sb-.*-auth-token/.test(k)) localStorage.removeItem(k); }catch(e){}
+  if(chan){ sb.removeChannel(chan); chan=null; }
+  queue.length=0; LS.clear(); DIETE={}; ready=false; plan=emptyPlan(); user=null; closeSheet();
+  showLogin();
 }
 $("login-form").addEventListener("submit",async e=>{
   e.preventDefault();
