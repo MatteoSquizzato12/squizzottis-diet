@@ -1,0 +1,15 @@
+# Segreti e configurazioni locali
+.env
+.env.*
+*.local
+
+# Dati personali: non vanno mai nel repo pubblico
+dati/
+*.pdf
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+node_modules/
