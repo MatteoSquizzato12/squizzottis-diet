@@ -248,13 +248,23 @@ function cellHTML(p,d,pid){
   }
   return `<button class="cell ${sm.state}" data-act="cell" data-p="${p}" data-d="${d}" data-pid="${pid}" aria-label="${esc(DIETE[p].nome+", "+GIORNI[d]+", "+P.nome)}">${inner}</button>`;
 }
+/* Icone dei pasti: tratti semplici su cerchio giallo. */
+const ICONE={
+  colazione:'<path d="M4 9h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3c0 1.5 1.5 1.5 1.5 3M12 3c0 1.5 1.5 1.5 1.5 3"/>',
+  spuntino:'<path d="M12 7.5c-2-1.6-6.5-1.2-6.5 4 0 4.2 2.8 9 6.5 8 3.7 1 6.5-3.8 6.5-8 0-5.2-4.5-5.6-6.5-4z"/><path d="M12 7.5c0-2 1-3.6 3-4.3"/>',
+  pranzo:'<circle cx="12" cy="12" r="5.5"/><path d="M3.5 4v4.5a1.5 1.5 0 0 0 3 0V4M5 9v11"/><path d="M20.5 4c-1.5 1-2 3-2 6h2v10"/>',
+  merenda:'<circle cx="12" cy="12" r="8"/><path d="M9 9.5h.01M14.5 8.5h.01M13.5 14.5h.01M9 14h.01M16 12h.01"/>',
+  cena:'<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/><path d="M17 4v3M15.5 5.5h3"/>'
+};
+const mealTitle=(pid,nome)=>`<span class="m-ico" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONE[pid]||""}</svg></span>${nome}`;
+const badge=p=>`<span class="badge" aria-hidden="true">${esc(DIETE[p].nome[0])}</span>`;
 function renderWeek(){
   const ti=todayIdx(), ps=persons();
-  let h=`<div class="tablewrap"><table class="week"><thead><tr><th class="rowh"></th>${[0,1,2,3,4,5,6].map(d=>`<th class="${d===ti?"today":""}">${G3[d]} <b>${dayDate(d).getDate()}</b></th>`).join("")}</tr></thead><tbody>`;
+  let h=`<div class="tablewrap"><table class="week"><thead><tr><th class="rowh"></th>${[0,1,2,3,4,5,6].map(d=>`<th class="dayh${d===ti?" today":""}${d>4?" we":""}"><span class="dw">${G3[d]}</span><b>${dayDate(d).getDate()}</b></th>`).join("")}</tr></thead><tbody>`;
   for(const [pid,nome] of PASTI){
     const rows=ps.filter(p=>DIETE[p].pasti[pid]); if(!rows.length)continue;
-    h+=`<tr class="meal-h"><th colspan="8"><span class="pasto">${nome}</span></th></tr>`;
-    rows.forEach(p=>{h+=`<tr class="p-${p} prow"><th class="rowh"><span class="who">${DIETE[p].nome}</span></th>${[0,1,2,3,4,5,6].map(d=>`<td>${cellHTML(p,d,pid)}</td>`).join("")}</tr>`;});
+    h+=`<tr class="meal-h"><th colspan="8"><span class="pasto">${mealTitle(pid,nome)}</span></th></tr>`;
+    rows.forEach(p=>{h+=`<tr class="p-${p} prow"><th class="rowh">${badge(p)}<span class="who">${DIETE[p].nome}</span></th>${[0,1,2,3,4,5,6].map(d=>`<td>${cellHTML(p,d,pid)}</td>`).join("")}</tr>`;});
   }
   return h+`</tbody></table></div>`;
 }
@@ -263,12 +273,12 @@ function renderDay(){
   let h=`<div class="daychips" role="group" aria-label="Giorno">`;
   for(let d=0;d<7;d++){
     let tot=0,ok=0;for(const p of ps)for(const [pid] of PASTI)if(DIETE[p].pasti[pid]){tot++;const st=mealSummary(p,d,pid).state;if(st==="full"||st==="libero")ok++;}
-    h+=`<button class="daychip" data-act="day" data-d="${d}" aria-pressed="${S.day===d}">${G3[d]}${d===ti?" ·":""}<b>${dayDate(d).getDate()}</b><span class="bar"><span style="width:${tot?Math.round(ok/tot*100):0}%"></span></span></button>`;
+    h+=`<button class="daychip${d===ti?" today":""}" data-act="day" data-d="${d}" aria-pressed="${S.day===d}">${G3[d]}<b>${dayDate(d).getDate()}</b><span class="bar"><span style="width:${tot?Math.round(ok/tot*100):0}%"></span></span></button>`;
   }
   h+=`</div>`;
   for(const [pid,nome] of PASTI){
     const rows=ps.filter(p=>DIETE[p].pasti[pid]); if(!rows.length)continue;
-    h+=`<section class="dmeal"><h3>${nome}</h3><div class="dcells">${rows.map(p=>`<div class="dcol p-${p} prow"><span class="who">${DIETE[p].nome}</span>${cellHTML(p,S.day,pid)}</div>`).join("")}</div></section>`;
+    h+=`<section class="dmeal"><h3>${mealTitle(pid,nome)}</h3><div class="dcells">${rows.map(p=>`<div class="dcol p-${p} prow"><span class="dhead">${badge(p)}<span class="who">${DIETE[p].nome}</span></span>${cellHTML(p,S.day,pid)}</div>`).join("")}</div></section>`;
   }
   return h;
 }
@@ -455,8 +465,12 @@ async function start(){
   document.body.className="signed-in"; $("login").hidden=true; $("app").hidden=false; loadMsg="Carico i piani…";
   applyDiete(LS.get("diete"));
   if(!queue.length) queue.push(...(LS.get("queue")||[]));
+  // All'apertura ognuno vede il proprio calendario (Matteo il suo, Anna il suo).
+  const own=LS.get("persona:"+user.id); if(PERSONE.includes(own)) S.who=own;
   subscribe();
   await loadDiete();
+  const {data:me}=await sb.from("membri").select("persona").eq("user_id",user.id).maybeSingle();
+  if(me&&PERSONE.includes(me.persona)){ LS.set("persona:"+user.id,me.persona); if(S.who!==me.persona){ S.who=me.persona; renderAll(); } }
   if(chan) sb.removeChannel(chan);
   chan=sb.channel("app")
     .on("postgres_changes",{event:"*",schema:"public",table:"settimane"},p=>{const r=p.new;if(r&&r.settimana===S.week&&!queue.some(q=>q.week===S.week))applyRemote(S.week,r.dati);})

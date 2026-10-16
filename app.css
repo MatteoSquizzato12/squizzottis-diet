@@ -298,7 +298,6 @@ h1{font-size:clamp(22px,4.2vw,44px)}
 /* Vista settimana */
 table.week tr.meal-h th{background:var(--surface);padding:16px 10px 8px;text-align:left;border-bottom:0}
 table.week tr.meal-h .pasto{font-family:var(--f-display);font-weight:800;text-transform:uppercase;position:sticky;left:10px;display:inline-block;margin:0;font-size:17px;letter-spacing:.03em}
-.pasto::after,.dmeal h3::after{content:".";color:var(--yellow)}
 table.week tr.prow > *{background:var(--row-bg);border-bottom:3px solid var(--surface);padding:7px 5px}
 table.week tr.prow > .rowh{background:var(--row-bg);padding-left:12px;vertical-align:middle}
 .prow .who{color:var(--row-ink);font-weight:700;font-size:13.5px;text-transform:uppercase;letter-spacing:.05em}
@@ -333,3 +332,39 @@ table.week tr.prow > .rowh{background:var(--row-bg);padding-left:12px;vertical-a
 .extra-item .nm{cursor:pointer}
 .item .iconbtn.sm{width:32px;height:32px;font-size:18px;color:var(--muted)}
 .item .iconbtn.sm:hover{color:var(--bad);border-color:var(--bad)}
+/* Calendario: fasce arrotondate che galleggiano sullo sfondo, giorni come gettoni, icone dei pasti */
+.tablewrap{background:transparent;border:0;border-radius:0;padding-bottom:6px}
+table.week{border-collapse:separate;border-spacing:0 7px;min-width:1060px}
+table.week thead th,table.week thead th.rowh{background:transparent;border:0;padding:2px 4px 4px}
+table.week thead th.dayh{text-align:center;vertical-align:bottom}
+.dayh .dw{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.14em;font-weight:600;color:var(--muted)}
+.dayh.we .dw{color:#C98500}
+table.week thead th.dayh b{display:inline-grid;place-items:center;width:44px;height:44px;margin:5px 0 0;padding:0;border-radius:50%;font-family:var(--f-display);font-weight:800;font-size:19px;color:var(--ink);background:var(--surface);box-shadow:0 1px 3px rgb(0 0 0 / .14)}
+table.week thead th.dayh.today b{background:var(--yellow);color:#1E2021;box-shadow:0 0 0 5px var(--yellow-soft)}
+table.week tr.meal-h th{background:transparent;padding:20px 2px 0}
+table.week tr.meal-h .pasto{font-size:19px;left:2px}
+.pasto,.dmeal h3{display:inline-flex;align-items:center;gap:11px}
+.m-ico{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--yellow);flex:none;box-shadow:0 2px 0 rgb(30 32 33 / .18)}
+.m-ico svg{width:22px;height:22px;fill:none;stroke:#1E2021;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+table.week tr.prow > *{border-bottom:0;padding:9px 4px}
+table.week tr.prow > .rowh{border-radius:24px 0 0 24px;padding-left:12px;width:124px;white-space:nowrap}
+table.week tr.prow > td:last-child{border-radius:0 24px 24px 0;padding-right:10px}
+.badge{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;font-family:var(--f-display);font-weight:800;font-size:15px;line-height:1;flex:none;vertical-align:middle}
+.prow.p-anna .badge{background:#1E2021;color:#FAB80C}
+.prow.p-matteo .badge{background:#FAB80C;color:#1E2021}
+.rowh .badge{margin-right:8px}
+.prow .cell{border-radius:14px;padding:8px 10px 9px;min-height:68px}
+.prow .cell .vn{display:inline-block;align-self:flex-start;background:#1E2021;color:#FAB80C;opacity:1;font-size:10px;letter-spacing:.07em;padding:2px 8px;border-radius:999px;margin-bottom:4px}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){
+  .prow .cell{transition:transform .15s,box-shadow .15s,border-color .15s}
+  .prow .cell:not(.empty):hover{transform:translateY(-2px);box-shadow:0 7px 16px rgb(0 0 0 / .25)}
+}
+/* Vista giorno */
+.dmeal{border-top:0;padding:16px 0 4px}
+.dmeal h3{font-size:19px;margin:0 0 12px}
+.dcol.prow{border-radius:24px;padding:12px 12px 14px;gap:10px}
+.dhead{display:flex;align-items:center;gap:9px;padding-left:2px}
+.daychips{gap:8px;padding-bottom:8px}
+.daychip{border-radius:18px;min-width:56px;padding:8px 10px 9px;box-shadow:0 1px 3px rgb(0 0 0 / .1);border-color:transparent}
+.daychip b{font-family:var(--f-display);font-weight:800;font-size:19px;margin-top:2px}
+.daychip.today:not([aria-pressed="true"]){box-shadow:0 0 0 2px var(--yellow)}table.week tr.meal-h .pasto{display:inline-flex;align-items:center;gap:11px}
