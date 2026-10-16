@@ -31,7 +31,7 @@ Questo repository è pubblico: **non contiene dati personali né chiavi segrete*
 
 ## Aggiornare una dieta
 
-Il PDF della nutrizionista non passa dall'app: viene trascritto nel formato JSON della dieta e caricato nella tabella `diete` dal SQL Editor (la versione precedente va in `diete_archivio`).
+Il PDF della nutrizionista non passa dall'app: viene trascritto nel formato JSON della dieta e caricato nella tabella `diete` dal SQL Editor (la versione precedente va in `diete_archivio`). `strumenti/sql-diete.js` genera l'SQL a partire dal JSON delle diete e da un file con la fonte di ciascun piano (es. "PDF Nutrizone del 19/09/2025", mostrata nella tendina Account). JSON e SQL generati contengono dati personali e restano fuori dal repository.
 
 ## Rilasciare una nuova versione
 

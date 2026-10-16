@@ -205,8 +205,8 @@ function renderAll(){
   st.lastElementChild.textContent=queue.length?"Senza rete: le modifiche partono appena torna la connessione":"Senza rete: stai vedendo l'ultima copia salvata";
   if(!ready){$("tabs").innerHTML="";$("main").innerHTML=`<div class="empty" style="margin-top:16px">${loadMsg}</div>`;return;}
   const nShop=shopping().filter(it=>!plan.spesa[it.k]).length;
-  $("tabs").innerHTML=[["piano","Piano"],["spesa","Lista della spesa",nShop||""],["controllo","Controllo"]].map(([id,l,c])=>`<button class="tab" role="tab" data-act="tab" data-tab="${id}" aria-selected="${S.tab===id}">${l}${c?`<span class="count">${c}</span>`:""}</button>`).join("");
-  $("main").innerHTML=S.tab==="piano"?renderPiano():S.tab==="spesa"?renderSpesa():renderControllo();
+  $("tabs").innerHTML=[["piano","Piano"],["spesa","Lista della spesa",nShop||""],["account","Account"]].map(([id,l,c])=>`<button class="tab" role="tab" data-act="tab" data-tab="${id}" aria-selected="${S.tab===id}">${l}${c?`<span class="count">${c}</span>`:""}</button>`).join("");
+  $("main").innerHTML=S.tab==="piano"?renderPiano():S.tab==="spesa"?renderSpesa():renderAccount();
   if(sheetCtx)renderSheet();
 }
 function whoSeg(){
@@ -283,33 +283,13 @@ function renderSpesa(){
   }
   return h+`</div>`;
 }
-function renderControllo(){
-  let h=`<div class="toolbar">${whoSeg()}</div><div class="ck-grid">`;
-  for(const p of persons()){
-    let tot=0,ok=0,rows="",warns=[];
-    for(const [pid] of PASTI){
-      const P=DIETE[p].pasti[pid]; if(!P)continue;
-      for(let d=0;d<7;d++){tot++;const sm=mealSummary(p,d,pid);if(sm.state==="full"||sm.state==="libero")ok++;}
-      if(P.varianti.some(v=>v.max)){const vu=variantCounts(p,pid);rows+=`<div class="ck"><div class="ck-t">${P.nome}: tipo di pasto</div><div class="freqbar">${P.varianti.filter(v=>v.max).map(v=>`<span class="fq ${fcls(vu[v.id]||0,v.max)}">${esc(v.nome)} ${vu[v.id]||0}/${v.max}</span>`).join("")}</div></div>`;}
-      for(const V of P.varianti)for(const pt of V.portate){
-        if(!pt.freq)continue;const u=usage(p,pid,V.id,pt);
-        rows+=`<div class="ck"><div class="ck-t">${P.nome}${P.varianti.length>1?" · "+esc(V.nome):""} · ${esc(pt.nome)}</div><div class="freqbar">${Object.keys(pt.freq).map(g=>`<span class="fq ${fcls(u[g]||0,pt.freq[g].max)}">${esc(pt.freq[g].nome)} ${u[g]||0}/${pt.freq[g].max}</span>`).join("")}</div></div>`;
-      }
-      for(let d=0;d<7;d++){const m=mealOf(p,d,pid);if(!m)continue;const V=variantOf(p,pid,m);if(!V)continue;const s=picks(m);for(const pt of V.portate){const op=pt.byId[s[pt.id]];if(op&&op.w)warns.push(`${G3[d]} ${P.nome.toLowerCase()}: ${op.n}`);}}
-    }
-    h+=`<section class="card p-${p}"><h3><span class="dot"></span>${DIETE[p].nome}</h3><p class="meta">${ok} pasti completi su ${tot}</p><div class="progress"><span style="width:${tot?Math.round(ok/tot*100):0}%"></span></div>${rows}${warns.length?`<div class="ck"><div class="ck-t">Da verificare con la nutrizionista</div><ul>${warns.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>`:""}</section>`;
-  }
-  h+=`<section class="card"><h3>Regole dei piani</h3><ul>
-    <li>Per ogni portata si sceglie un alimento, senza saltarne nessuna. Se sei sazio riduci le grammature, non le portate.</li>
-    <li>Le grammature sono a crudo e senza scarto: all'inizio conviene pesare.</li>
-    <li>Rispetta le frequenze settimanali (es. 2/7 = due volte a settimana). Verde = obiettivo raggiunto, rosso = superato.</li>
-    <li>Acqua almeno 1,5–2 litri al giorno. Sale da cucina al massimo 3 g; spezie, erbe, aceto, limone e brodo vegetale liberi.</li>
-    <li>Pesce almeno due volte a settimana; preferire carne bianca e tagli magri.</li>
-  </ul></section>
-  <section class="card"><h3>Account</h3><p class="meta">Accesso fatto come ${esc(user?.email||"")}</p><ul>${PERSONE.map(p=>{const i=DIETE[p].info||{};return `<li>Piano di ${esc(DIETE[p].nome)}: aggiornato il ${i.aggiornato?esc(new Date(i.aggiornato).toLocaleDateString("it-IT")):"–"}${i.fonte?" da "+esc(i.fonte):""}</li>`;}).join("")}</ul>
-  <p class="hint">Per un nuovo piano della nutrizionista: mettete il PDF nella cartella raw/ del vault e chiedete a Claude di aggiornare la dieta.</p>
-  <div class="sh-foot"><button class="btn ghost" data-act="logout">Esci</button></div></section></div>`;
-  return h;
+function renderAccount(){
+  const day=s=>s?esc(new Date(s).toLocaleDateString("it-IT")):"–";
+  return `<section class="card account"><h3>Account</h3>
+    <div class="ck"><div class="ck-t">Accesso fatto come</div><div class="acc-mail">${esc(user?.email||"")}</div></div>
+    <div class="ck"><div class="ck-t">Piani alimentari</div>${PERSONE.map(p=>{const i=DIETE[p].info||{};
+      return `<div class="acc-row p-${p}"><span class="who"><span class="dot"></span>${esc(DIETE[p].nome)}</span><span>${esc(i.fonte||"PDF della nutrizionista")}<br><span class="hint">caricato nell'app il ${day(i.aggiornato)}</span></span></div>`;}).join("")}</div>
+    <div class="sh-foot"><button class="btn ghost" data-act="logout">Log out</button></div></section>`;
 }
 function renderSheet(){
   const {p,d,pid}=sheetCtx, P=DIETE[p].pasti[pid], m=mealOf(p,d,pid);
@@ -425,10 +405,10 @@ async function loadDiete(){
   else if(!ready){
     const {data:me}=await sb.from("membri").select("persona").eq("user_id",user.id).maybeSingle();
     const mail=esc(user.email||"");
-    if(!me) loadMsg=`<b>Account non abilitato</b>Hai fatto l'accesso come ${mail}, ma questo account non è nella tabella "membri" di Supabase.<br><br><button class="btn ghost" data-act="logout">Esci</button>`;
+    if(!me) loadMsg=`<b>Account non abilitato</b>Hai fatto l'accesso come ${mail}, ma questo account non è nella tabella "membri" di Supabase.<br><br><button class="btn ghost" data-act="logout">Log out</button>`;
     else{
       const have=(data||[]).map(r=>r.persona), miss=PERSONE.filter(p=>!have.includes(p));
-      loadMsg=`<b>Diete mancanti</b>Accesso come ${mail} (${esc(me.persona)}): ok. Su Supabase manca la dieta di ${esc(miss.join(" e "))}.<br><br><button class="btn ghost" data-act="logout">Esci</button>`;
+      loadMsg=`<b>Diete mancanti</b>Accesso come ${mail} (${esc(me.persona)}): ok. Su Supabase manca la dieta di ${esc(miss.join(" e "))}.<br><br><button class="btn ghost" data-act="logout">Log out</button>`;
     }
   }
   renderAll();
