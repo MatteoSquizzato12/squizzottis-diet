@@ -170,7 +170,7 @@ function autoFill(){
 }
 function clearWeek(){
   const patch={piano:{}};for(const p of persons())patch.piano[p]=null;
-  if(S.who==="both")patch.spesa=null;
+  if(S.who==="both"){patch.spesa=null;patch.extra=null;}
   write(patch); toast("Settimana svuotata.");
 }
 
@@ -189,6 +189,16 @@ function shopping(){
   }
   return Object.values(items).filter(it=>it.g>0||it.qb>0);
 }
+/* Voci scritte a mano, fuori dalla dieta: plan.extra = {<id>: {n: nome, t: quando}}, spunta in plan.spesa["x-<id>"]. */
+const extraItems=()=>Object.entries(plan.extra||{}).filter(([,v])=>v&&v.n).map(([id,v])=>({k:"x-"+id,id,name:String(v.n),t:v.t||0}));
+function addExtra(){
+  const inp=$("extra-in"); if(!inp)return;
+  const n=inp.value.trim().replace(/\s+/g," ").slice(0,80); if(!n)return;
+  inp.value="";
+  if(extraItems().some(it=>it.name.toLowerCase()===n.toLowerCase()&&!plan.spesa[it.k])){toast(`"${n}" è già in lista.`);return;}
+  const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  write({extra:{[id]:{n,t:Date.now()}}});
+}
 function fmtG(g){g=Math.round(g);return g>=1000?(g/1000).toFixed(g%1000===0?0:2).replace(/0$/,"").replace(".",",")+" kg":g+" g";}
 function qtyItem(it){
   const parts=[];
@@ -204,9 +214,12 @@ function renderAll(){
   const st=$("status");st.className="status "+sync;st.hidden=sync!=="local";
   st.lastElementChild.textContent=queue.length?"Senza rete: le modifiche partono appena torna la connessione":"Senza rete: stai vedendo l'ultima copia salvata";
   if(!ready){$("tabs").innerHTML="";$("main").innerHTML=`<div class="empty" style="margin-top:16px">${loadMsg}</div>`;return;}
-  const nShop=shopping().filter(it=>!plan.spesa[it.k]).length;
+  const nShop=[...shopping(),...extraItems()].filter(it=>!plan.spesa[it.k]).length;
   $("tabs").innerHTML=[["piano","Piano"],["spesa","Lista della spesa",nShop||""],["account","Account"]].map(([id,l,c])=>`<button class="tab" role="tab" data-act="tab" data-tab="${id}" aria-selected="${S.tab===id}">${l}${c?`<span class="count">${c}</span>`:""}</button>`).join("");
+  // Un aggiornamento dall'altro telefono non deve cancellare quello che si sta scrivendo.
+  const inp=$("extra-in"), typed=inp?inp.value:"", typing=inp&&document.activeElement===inp;
   $("main").innerHTML=S.tab==="piano"?renderPiano():S.tab==="spesa"?renderSpesa():renderAccount();
+  const inp2=$("extra-in"); if(inp2){ if(typed)inp2.value=typed; if(typing)inp2.focus(); }
   if(sheetCtx)renderSheet();
 }
 function whoSeg(){
@@ -260,14 +273,26 @@ function renderDay(){
   return h;
 }
 function weekProgress(ps){let tot=0,ok=0;for(const p of ps)for(const [pid] of PASTI){if(!DIETE[p].pasti[pid])continue;for(let d=0;d<7;d++){tot++;const st=mealSummary(p,d,pid).state;if(st==="full"||st==="libero")ok++;}}return{tot,ok};}
+function renderExtra(){
+  const extra=extraItems(), left=extra.filter(it=>!plan.spesa[it.k]).length;
+  let its=extra.sort((a,b)=>((plan.spesa[a.k]?1:0)-(plan.spesa[b.k]?1:0))||a.t-b.t);
+  if(S.hideGot)its=its.filter(it=>!plan.spesa[it.k]);
+  let h=`<section class="cat extra"><h3>Altro da comprare<span>${extra.length?(left?left+" da prendere":"tutto preso"):"fuori dalla dieta"}</span></h3>
+    <form class="extra-add" data-form="extra"><input id="extra-in" type="text" maxlength="80" placeholder="Es. detersivo, acqua, caffè…" aria-label="Cosa comprare" autocomplete="off" enterkeyhint="done"><button class="btn" type="submit">Aggiungi</button></form>`;
+  for(const it of its){
+    const got=!!plan.spesa[it.k];
+    h+=`<div class="item extra-item${got?" got":""}"><input type="checkbox" id="chk-${it.k}" data-check="${it.k}" ${got?"checked":""}><label class="nm" for="chk-${it.k}">${esc(it.name)}</label><button class="iconbtn sm" data-act="extra-del" data-id="${esc(it.id)}" aria-label="Togli ${esc(it.name)} dalla lista">×</button></div>`;
+  }
+  return h+`</section>`;
+}
 function renderSpesa(){
-  const items=shopping();
-  if(!items.length)return `<div class="empty" style="margin-top:16px"><b>La lista è vuota</b>Si crea da sola mentre scegli i pasti nel Piano.</div>`;
-  const tot=items.length, got=items.filter(it=>plan.spesa[it.k]).length, wp=weekProgress(PERSONE);
+  const items=shopping(), all=[...items,...extraItems()];
+  if(!all.length)return `<div class="empty" style="margin-top:16px"><b>La lista è vuota</b>Si crea da sola mentre scegli i pasti nel Piano. Qui sotto puoi aggiungere altro da comprare.</div><div class="spesa-grid" style="margin-top:14px">${renderExtra()}</div>`;
+  const tot=all.length, got=all.filter(it=>plan.spesa[it.k]).length, wp=weekProgress(PERSONE);
   let h=`<div class="spesa-head"><div class="spesa-prog"><div class="sp-num"><b>${got}</b> di ${tot} prodotti presi</div><div class="progress"><span style="width:${Math.round(got/tot*100)}%"></span></div><p>Settimana ${weekLabel()} · totali di Matteo e Anna, a crudo e senza scarto${wp.ok<wp.tot?` · piano compilato ${wp.ok}/${wp.tot}, la lista si aggiorna se aggiungi pasti`:""}</p></div>
     <div class="toolbar" style="margin:0"><button class="btn ghost" data-act="hide-got" aria-pressed="${S.hideGot}">${S.hideGot?"Mostra i presi":"Nascondi i presi"}</button><button class="btn ghost" data-act="uncheck">Togli le spunte</button><button class="btn" data-act="copy">Copia la lista</button></div></div>`;
   if(got===tot)h+=`<p class="banner">Spesa completata: hai preso tutto.</p>`;
-  h+=`<div class="spesa-grid">`;
+  h+=`<div class="spesa-grid">`+renderExtra();
   for(const c of CATS){
     let its=items.filter(it=>it.cat===c); if(!its.length)continue;
     const left=its.filter(it=>!plan.spesa[it.k]).length;
@@ -353,6 +378,8 @@ async function copyList(){
   const items=shopping().filter(it=>!plan.spesa[it.k]);
   let t=`Spesa · settimana ${weekLabel()}\n`;
   for(const c of CATS){const its=items.filter(it=>it.cat===c).sort((a,b)=>a.name.localeCompare(b.name,"it"));if(!its.length)continue;t+=`\n${c.toUpperCase()}\n`+its.map(it=>`- ${it.name}: ${qtyItem(it)}`).join("\n")+"\n";}
+  const extra=extraItems().filter(it=>!plan.spesa[it.k]).sort((a,b)=>a.t-b.t);
+  if(extra.length)t+=`\nALTRO\n`+extra.map(it=>`- ${it.name}`).join("\n")+"\n";
   try{await navigator.clipboard.writeText(t);toast("Lista copiata: incollala su WhatsApp o nelle Note.");}
   catch(e){toast("Copia non riuscita da questo dispositivo.");}
 }
@@ -379,6 +406,11 @@ document.addEventListener("click",e=>{
   else if(a==="copy")copyList();
   else if(a==="hide-got"){S.hideGot=!S.hideGot;setPref("hideGot",S.hideGot?"1":"0");renderAll();}
   else if(a==="uncheck"){const sp={};for(const k in plan.spesa)sp[k]=null;write({spesa:sp});}
+  else if(a==="extra-del"){const id=b.dataset.id;write({extra:{[id]:null},spesa:{["x-"+id]:null}});}
+});
+document.addEventListener("submit",e=>{
+  if(e.target.dataset.form!=="extra")return;
+  e.preventDefault(); addExtra(); $("extra-in")?.focus();
 });
 document.addEventListener("change",e=>{
   const k=e.target.dataset&&e.target.dataset.check;if(k)write({spesa:{[k]:e.target.checked?true:null}});

@@ -42,7 +42,8 @@ create policy "diete: lettura membri" on public.diete
   for select to authenticated using ((select public.is_membro()));
 
 -- ---------- Settimane (piano + spesa) ----------
--- dati = {"piano": {matteo|anna: {d0..d6: {<pasto>: {v, s}}}}, "spesa": {<prodotto>: true}}
+-- dati = {"piano": {matteo|anna: {d0..d6: {<pasto>: {v, s}}}}, "spesa": {<prodotto>|x-<id>: true},
+--         "extra": {<id>: {"n": "voce scritta a mano", "t": timestamp}}}
 create table if not exists public.settimane (
   settimana date primary key check (extract(isodow from settimana) = 1),
   dati jsonb not null default '{"piano": {}, "spesa": {}}',
