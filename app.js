@@ -266,7 +266,7 @@ function renderWeek(){
   for(const [pid,nome] of PASTI){
     const rows=ps.filter(p=>DIETE[p].pasti[pid]); if(!rows.length)continue;
     h+=`<tr class="gap"><td colspan="9"></td></tr>`;
-    rows.forEach((p,j)=>{h+=`<tr class="p-${p} prow">${j===0?`<th class="mealside" rowspan="${rows.length}" scope="rowgroup"><span class="pasto">${mealTitle(pid,nome)}</span></th>`:""}<th class="rowh">${badge(p)}<span class="who">${DIETE[p].nome}</span></th>${[0,1,2,3,4,5,6].map(d=>`<td>${cellHTML(p,d,pid)}</td>`).join("")}</tr>`;});
+    rows.forEach((p,j)=>{h+=`<tr class="p-${p} prow">${j===0?`<th class="mealside" rowspan="${rows.length}" scope="rowgroup"><span class="pasto">${mealTitle(pid,nome)}</span></th>`:""}<th class="rowh">${badge(p)}<span class="sr-only">${DIETE[p].nome}</span></th>${[0,1,2,3,4,5,6].map(d=>`<td>${cellHTML(p,d,pid)}</td>`).join("")}</tr>`;});
   }
   return h+`</tbody></table></div></div>`;
 }
@@ -280,7 +280,7 @@ function renderDay(){
   h+=`</div>`;
   for(const [pid,nome] of PASTI){
     const rows=ps.filter(p=>DIETE[p].pasti[pid]); if(!rows.length)continue;
-    h+=`<section class="dmeal"><h3>${mealTitle(pid,nome)}</h3><div class="dcells">${rows.map(p=>`<div class="dcol p-${p} prow"><span class="dhead">${badge(p)}<span class="who">${DIETE[p].nome}</span></span>${cellHTML(p,S.day,pid)}</div>`).join("")}</div></section>`;
+    h+=`<section class="dmeal"><h3>${mealTitle(pid,nome)}</h3><div class="dcells">${rows.map(p=>`<div class="dcol p-${p} prow"><span class="dhead">${badge(p)}<span class="sr-only">${DIETE[p].nome}</span></span>${cellHTML(p,S.day,pid)}</div>`).join("")}</div></section>`;
   }
   return h;
 }
