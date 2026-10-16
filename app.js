@@ -214,10 +214,9 @@ function whoSeg(){
 }
 function renderPiano(){
   const confirming=Date.now()-S.confirmClear<4000;
-  let h=`<div class="toolbar">${whoSeg()}
-    <div class="seg" role="group" aria-label="Vista"><button data-act="view" data-view="week" aria-pressed="${S.view==="week"}">Settimana</button><button data-act="view" data-view="day" aria-pressed="${S.view==="day"}">Giorno</button></div>
-    <span class="grow"></span>
-    <button class="btn ghost${confirming?" danger":""}" data-act="clear-week">${confirming?"Tocca ancora per svuotare":"Svuota settimana"}</button></div>`;
+  let h=`<div class="toolbar piano-bar"><div class="tb-left">${whoSeg()}</div>
+    <div class="seg tb-mid" role="group" aria-label="Vista"><button data-act="view" data-view="week" aria-pressed="${S.view==="week"}">Settimana</button><button data-act="view" data-view="day" aria-pressed="${S.view==="day"}">Giorno</button></div>
+    <div class="tb-right"><button class="btn ghost${confirming?" danger":""}" data-act="clear-week">${confirming?"Tocca ancora per svuotare":"Svuota settimana"}</button></div></div>`;
   const wp=weekProgress(persons());
   if(wp.ok===wp.tot)h+=`<p class="banner">Piano della settimana completo. <button class="btn" data-act="tab" data-tab="spesa">Apri la lista della spesa</button></p>`;
   h+=S.view==="week"?renderWeek():renderDay();
@@ -241,7 +240,8 @@ function renderWeek(){
   let h=`<div class="tablewrap"><table class="week"><thead><tr><th class="rowh"></th>${[0,1,2,3,4,5,6].map(d=>`<th class="${d===ti?"today":""}">${G3[d]} <b>${dayDate(d).getDate()}</b></th>`).join("")}</tr></thead><tbody>`;
   for(const [pid,nome] of PASTI){
     const rows=ps.filter(p=>DIETE[p].pasti[pid]); if(!rows.length)continue;
-    rows.forEach((p,j)=>{h+=`<tr class="p-${p}${j===0?" first":""}"><th class="rowh">${j===0?`<span class="pasto">${nome}</span>`:""}<span class="who"><span class="dot"></span>${DIETE[p].nome}</span></th>${[0,1,2,3,4,5,6].map(d=>`<td>${cellHTML(p,d,pid)}</td>`).join("")}</tr>`;});
+    h+=`<tr class="meal-h"><th colspan="8"><span class="pasto">${nome}</span></th></tr>`;
+    rows.forEach(p=>{h+=`<tr class="p-${p} prow"><th class="rowh"><span class="who">${DIETE[p].nome}</span></th>${[0,1,2,3,4,5,6].map(d=>`<td>${cellHTML(p,d,pid)}</td>`).join("")}</tr>`;});
   }
   return h+`</tbody></table></div>`;
 }
@@ -255,7 +255,7 @@ function renderDay(){
   h+=`</div>`;
   for(const [pid,nome] of PASTI){
     const rows=ps.filter(p=>DIETE[p].pasti[pid]); if(!rows.length)continue;
-    h+=`<section class="dmeal"><h3>${nome}</h3><div class="dcells">${rows.map(p=>`<div class="dcol p-${p}"><span class="who"><span class="dot"></span>${DIETE[p].nome}</span>${cellHTML(p,S.day,pid)}</div>`).join("")}</div></section>`;
+    h+=`<section class="dmeal"><h3>${nome}</h3><div class="dcells">${rows.map(p=>`<div class="dcol p-${p} prow"><span class="who">${DIETE[p].nome}</span>${cellHTML(p,S.day,pid)}</div>`).join("")}</div></section>`;
   }
   return h;
 }

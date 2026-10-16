@@ -280,3 +280,45 @@ h1{font-size:clamp(22px,4.2vw,44px)}
 .acc-row{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:start;padding:6px 0;font-size:14px}
 .acc-row .who{font-weight:600;color:var(--ink)}
 .acc-row .hint{font-size:12.5px}
+
+/* Persone: Anna gialla, Matteo grigio. Righe del piano: Anna su giallo, Matteo su nero, riquadri bianchi in rilievo. */
+:root{--matteo:#6A7072;--anna:#FAB80C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--matteo:#A3A8AA;--anna:#FAB80C}}
+:root[data-theme="dark"]{--matteo:#A3A8AA;--anna:#FAB80C}
+.prow.p-anna{--row-bg:#FAB80C;--row-ink:#1E2021;--empty-bg:rgb(255 255 255 / .45);--empty-line:rgb(30 32 33 / .45);--empty-ink:#1E2021}
+.prow.p-matteo{--row-bg:#1E2021;--row-ink:#FFFFFF;--empty-bg:rgb(255 255 255 / .07);--empty-line:rgb(255 255 255 / .4);--empty-ink:#E4E6E7}
+.seg button[aria-pressed="true"] .dot{box-shadow:0 0 0 1.5px var(--on-yellow)}
+
+/* Barra del piano: persone a sinistra, Settimana/Giorno al centro, Svuota a destra */
+.piano-bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.piano-bar .tb-left{justify-self:start} .piano-bar .tb-right{justify-self:end}
+@media (max-width:720px){.piano-bar{grid-template-columns:1fr;justify-items:center}.piano-bar .tb-left,.piano-bar .tb-right{justify-self:center}}
+
+/* Vista settimana */
+table.week tr.meal-h th{background:var(--surface);padding:16px 10px 8px;text-align:left;border-bottom:0}
+table.week tr.meal-h .pasto{font-family:var(--f-display);font-weight:800;text-transform:uppercase;position:sticky;left:10px;display:inline-block;margin:0;font-size:17px;letter-spacing:.03em}
+.pasto::after,.dmeal h3::after{content:".";color:var(--yellow)}
+table.week tr.prow > *{background:var(--row-bg);border-bottom:3px solid var(--surface);padding:7px 5px}
+table.week tr.prow > .rowh{background:var(--row-bg);padding-left:12px;vertical-align:middle}
+.prow .who{color:var(--row-ink);font-weight:700;font-size:13.5px;text-transform:uppercase;letter-spacing:.05em}
+
+/* Vista giorno */
+.dmeal h3{font-size:19px;margin:4px 0 10px}
+.dcol.prow{background:var(--row-bg);border-radius:16px;padding:10px 10px 12px;gap:8px}
+.dcol.prow .who{padding-left:4px}
+
+/* Riquadri di scelta dentro le righe colorate */
+.prow .cell{background:#FFFFFF;color:#1E2021;border:1.5px solid transparent;border-left-width:1.5px;box-shadow:0 1px 3px rgb(0 0 0 / .22)}
+.prow .cell .vn{color:#1E2021;opacity:.7}
+.prow .cell .more{color:#535353}
+.prow .cell .miss,.prow .cell .wl{color:#A86A00}
+.prow .cell.partial{border-color:#C98500}
+.prow .cell.libero{background:#FFF4D6}
+.prow .cell.empty{background:var(--empty-bg);border:1.5px dashed var(--empty-line);box-shadow:none;color:var(--empty-ink)}
+.prow .cell.empty .add{color:var(--empty-ink);opacity:.85;font-weight:600}
+.prow .cell:hover{border-color:#1E2021;border-left-color:#1E2021}
+.prow.p-matteo .cell:hover{border-color:#FAB80C}
+.prow .cell:focus-visible{outline:2px solid var(--row-ink);outline-offset:2px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .prow.p-matteo{--row-bg:#000000}}
+:root[data-theme="dark"] .prow.p-matteo{--row-bg:#000000}
+.dcol.prow.p-matteo{box-shadow:inset 0 0 0 1px rgb(255 255 255 / .12)}
