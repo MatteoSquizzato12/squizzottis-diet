@@ -15,6 +15,7 @@ Questo repository è pubblico: **non contiene dati personali né chiavi segrete*
 | `index.html` | Pagina, schermata di accesso |
 | `app.js` | Logica: piano, spesa, controllo frequenze, sincronizzazione con Supabase |
 | `app.css` | Stile (brand Allos) |
+| `fonts/` | Akira Expanded Super Bold (titoli), usato con licenza web di Allos |
 | `config.js` | URL e chiave publishable di Supabase |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installazione sul telefono e uso offline |
 | `supabase/schema.sql` | Tabelle, regole di accesso e funzioni del database |

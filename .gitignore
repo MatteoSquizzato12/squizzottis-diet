@@ -7,9 +7,6 @@
 dati/
 *.pdf
 
-# Font commerciale (Akira Expanded): fuori dal repo pubblico finché la licenza non lo permette
-fonts/
-
 # Sistema / editor
 .DS_Store
 Thumbs.db
