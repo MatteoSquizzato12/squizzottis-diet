@@ -382,3 +382,19 @@ table.week tr.prow > td:last-child{border-radius:0 24px 24px 0;padding-right:10p
 .prow.p-anna{--fill:#FFF1C7} .prow.p-matteo{--fill:#D9DBDD}
 .prow .cell{background:var(--fill)}
 .prow .cell.libero{background:repeating-linear-gradient(135deg,transparent 0 9px,rgb(30 32 33 / .07) 9px 18px),var(--fill)}
+
+/* Griglia dei giorni in sottofondo alla vista settimana */
+.weekgrid{position:relative;min-width:1060px}
+.daycols{position:absolute;inset:0;display:grid;grid-template-columns:124px repeat(7,1fr);pointer-events:none;z-index:0}
+.daycols span+span{border-left:1px solid var(--line)}
+.daycols span:nth-child(odd):not(:first-child){background:rgb(30 32 33 / .035)}
+.daycols span:last-child{border-right:1px solid var(--line)}
+.daycols span.today{background:var(--yellow-soft)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .daycols span:nth-child(odd):not(:first-child){background:rgb(255 255 255 / .03)}}
+:root[data-theme="dark"] .daycols span:nth-child(odd):not(:first-child){background:rgb(255 255 255 / .03)}
+table.week{position:relative;z-index:1;min-width:0;width:100%}
+table.week col.c-rowh{width:124px}
+/* Divisori tra i giorni dentro le fasce */
+.prow.p-anna{--div:rgb(30 32 33 / .22)} .prow.p-matteo{--div:rgb(255 255 255 / .2)}
+table.week tr.prow > td + td{background-image:linear-gradient(var(--div),var(--div));background-size:1px 70%;background-position:0 50%;background-repeat:no-repeat}
+.daycols span.today:not(:first-child):nth-child(n){background:rgb(250 184 12 / .28)}
