@@ -49,11 +49,11 @@ const queue=[];let busy=false;
 let sheetCtx=null;
 
 const persons=()=>S.who==="both"?PERSONE:[S.who];
-const mealOf=(p,d,pid)=>{const m=plan.piano?.[p]?.["d"+d]?.[pid];return m&&m.v?m:null;};
+const mealOf=(p,d,pid)=>{const m=plan.piano?.[p]?.["d"+d]?.[pid];return m&&(m.v||m.lib)?m:null;};
 const picks=m=>(m&&m.s)||{};
-const variantOf=(p,pid,m)=>m?DIETE[p].pasti[pid].varianti.find(v=>v.id===m.v)||null:null;
+const variantOf=(p,pid,m)=>m&&m.v?DIETE[p].pasti[pid].varianti.find(v=>v.id===m.v)||null:null;
 const isLib=(V,s)=>V.portate.some(pt=>pt.byId[s[pt.id]]?.lib);
-const qtyLabel=op=>op.lib?"":op.g?(op.t?op.t+" · ":"")+op.g+" g":(op.t||"");
+const qtyLabel=op=>op.lib?"":op.g?op.g+" g":(op.t||"");
 const fcls=(c,max)=>c>max?"over":c===max?"done":"todo";
 
 function deepMerge(t,s){for(const k in s){const v=s[k];if(v===null)delete t[k];else if(typeof v==="object"&&!Array.isArray(v)){if(typeof t[k]!=="object"||t[k]===null)t[k]={};deepMerge(t[k],v);}else t[k]=v;}return t;}
@@ -108,10 +108,11 @@ function subscribe(){
 }
 
 /* ---------- logica piano ---------- */
-function usage(p,pid,vid,pt){const u={};for(let d=0;d<7;d++){const m=mealOf(p,d,pid);if(!m||m.v!==vid)continue;const op=pt.byId[picks(m)[pt.id]];if(op&&op.f)u[op.f]=(u[op.f]||0)+1;}return u;}
-function variantCounts(p,pid){const u={};for(let d=0;d<7;d++){const m=mealOf(p,d,pid);if(m)u[m.v]=(u[m.v]||0)+1;}return u;}
+function usage(p,pid,vid,pt){const u={};for(let d=0;d<7;d++){const m=mealOf(p,d,pid);if(!m)continue;if(m.lib){if(pt.freq&&pt.freq.libero)u.libero=(u.libero||0)+1;continue;}if(m.v!==vid)continue;const op=pt.byId[picks(m)[pt.id]];if(op&&op.f)u[op.f]=(u[op.f]||0)+1;}return u;}
+function variantCounts(p,pid){const u={};for(let d=0;d<7;d++){const m=mealOf(p,d,pid);if(m&&m.v)u[m.v]=(u[m.v]||0)+1;}return u;}
 function mealSummary(p,d,pid){
   const m=mealOf(p,d,pid); if(!m)return{state:"empty"};
+  if(m.lib)return{state:"libero",lines:["Pasto libero"]};
   const P=DIETE[p].pasti[pid], V=variantOf(p,pid,m); if(!V)return{state:"empty"};
   const s=picks(m), lines=[]; let missing=0, warn=false;
   const variant=P.varianti.length>1?V.nome:null;
@@ -333,18 +334,25 @@ function renderSheet(){
   const vid=m?m.v:(P.varianti.length===1?P.varianti[0].id:null);
   const V=vid?P.varianti.find(v=>v.id===vid):null, s=picks(m);
   let h=`<div class="sh-head p-${p}"><div><div class="eyebrow"><span class="dot"></span>${DIETE[p].nome} · ${GIORNI[d]} ${dayDate(d).getDate()}</div><h2>${P.nome}</h2></div><button class="iconbtn" data-act="close" aria-label="Chiudi" id="sheet-close">×</button></div>`;
-  if(P.varianti.length>1){
-    const vu=variantCounts(p,pid);
-    h+=`<div class="variants">${P.varianti.map(v=>`<button class="vbtn" data-act="variant" data-v="${v.id}" aria-pressed="${v.id===vid}"><b>${esc(v.nome)}</b>${v.max?`<span class="vfq ${fcls(vu[v.id]||0,v.max)}">${vu[v.id]||0} su ${v.max} a settimana</span>`:""}</button>`).join("")}</div>`;
+  const conLibero=LIBERO.includes(pid), libOn=isLibMeal(p,pid,m);
+  if(conLibero){
+    const F=libFreq(P), c=libCount(p,pid);
+    h+=`<button class="libero-btn" data-act="libero" aria-pressed="${libOn}"><b>Pasto libero</b>${F?`<span class="vfq ${fcls(c,F.max)}">${c} su ${F.max} a settimana</span>`:""}<span class="lib-hint">${libOn?"Tocca di nuovo per scegliere gli alimenti":"Niente alimenti da scegliere e niente spesa"}</span></button>`;
   }
-  if(!V)h+=`<p class="hint">Scegli che tipo di ${P.nome.toLowerCase()} fare in questo giorno.</p>`;
-  else{
-    if(V.nota)h+=`<p class="nota">${esc(V.nota)}</p>`;
-    const lib=isLib(V,s);
-    for(const pt of V.portate){if(lib&&!pt.byId[s[pt.id]]?.lib)continue;h+=renderPortata(p,pid,V,pt,s);}
-    if(lib)h+=`<p class="hint">Pasto libero: niente grammature e niente in lista della spesa.</p>`;
+  if(libOn){
+    h+=`<p class="hint">Pasto libero: niente grammature e niente in lista della spesa.</p>`;
+  } else {
+    if(P.varianti.length>1){
+      const vu=variantCounts(p,pid);
+      h+=`<div class="variants">${P.varianti.map(v=>`<button class="vbtn" data-act="variant" data-v="${v.id}" aria-pressed="${v.id===vid}"><b>${esc(v.nome)}</b>${v.max?`<span class="vfq ${fcls(vu[v.id]||0,v.max)}">${vu[v.id]||0} su ${v.max} a settimana</span>`:""}</button>`).join("")}</div>`;
+    }
+    if(!V)h+=`<p class="hint">Scegli che tipo di ${P.nome.toLowerCase()} fare in questo giorno.</p>`;
+    else{
+      if(V.nota&&!conLibero)h+=`<p class="nota">${esc(V.nota)}</p>`;
+      for(const pt of V.portate)h+=renderPortata(p,pid,V,pt,s);
+    }
   }
-  h+=`<div class="sh-foot"><button class="btn ghost" data-act="clear-meal">Svuota pasto</button>${V&&!isLib(V,s)?`<button class="btn ghost" data-act="fill-meal">Completa a caso</button>`:""}<button class="btn" data-act="close">Fatto</button></div>`;
+  h+=`<div class="sh-foot"><button class="btn ghost" data-act="clear-meal">Svuota pasto</button>${V&&!libOn?`<button class="btn ghost" data-act="fill-meal">Completa a caso</button>`:""}<button class="btn" data-act="close">Fatto</button></div>`;
   const sh=$("sheet"), y=sh.scrollTop; sh.innerHTML=h; sh.scrollTop=y;
 }
 function renderPortata(p,pid,V,pt,s){
@@ -354,8 +362,8 @@ function renderPortata(p,pid,V,pt,s){
     return `<button class="chip${full?" full":""}${op.w?" warn":""}" data-act="opt" data-pt="${pt.id}" data-o="${op.id}" aria-pressed="${op.id===sel}">${op.w?'<span class="wmark" aria-hidden="true">!</span>':""}<span>${esc(op.n)}</span>${q?`<span class="g">${esc(q)}</span>`:""}</button>`;
   };
   let h=`<section class="portata"><h3>${esc(pt.nome)}</h3>`;
-  if(pt.freq)for(const g in pt.freq){const F=pt.freq[g],c=u[g]||0;h+=`<div class="fgroup"><div class="fglabel">${esc(F.nome)} <span class="fq ${fcls(c,F.max)}">${c}/${F.max} a settimana</span></div><div class="chips">${pt.opz.filter(x=>x.f===g).map(chip).join("")}</div></div>`;}
-  else h+=`<div class="chips">${pt.opz.map(chip).join("")}</div>`;
+  if(pt.freq)for(const g in pt.freq){if(g==="libero"&&LIBERO.includes(pid))continue;const F=pt.freq[g],c=u[g]||0;h+=`<div class="fgroup"><div class="fglabel">${esc(F.nome)} <span class="fq ${fcls(c,F.max)}">${c}/${F.max} a settimana</span></div><div class="chips">${pt.opz.filter(x=>x.f===g).map(chip).join("")}</div></div>`;}
+  else h+=`<div class="chips">${pt.opz.filter(x=>!(x.lib&&LIBERO.includes(pid))).map(chip).join("")}</div>`;
   const so=pt.byId[sel];
   if(so){if(so.w)h+=`<p class="warnline">${esc(so.w)}</p>`;const r=DIETE[p].ricette[so.n];if(r)h+=`<p class="ricetta">Ricetta della nutrizionista, in lista spesa: ${r.map(([n,g])=>esc(n)+" "+g+" g").join(", ")}.</p>`;}
   return h+`</section>`;
@@ -368,7 +376,7 @@ function pickVariant(vid){
   const {p,d,pid}=sheetCtx,P=DIETE[p].pasti[pid],m=mealOf(p,d,pid),V=P.varianti.find(v=>v.id===vid),old=picks(m),s={};
   for(const pt of V.portate){if(old[pt.id]&&pt.byId[old[pt.id]])s[pt.id]=old[pt.id];else if(pt.opz.length===1)s[pt.id]=pt.opz[0].id;}
   for(const k in old)if(!(k in s))s[k]=null;
-  write(patchAt(p,d,pid,{v:vid,s}));
+  write(patchAt(p,d,pid,{v:vid,s,lib:null}));
 }
 function pickOpt(ptid,oid){
   const {p,d,pid}=sheetCtx,P=DIETE[p].pasti[pid],m=mealOf(p,d,pid);
@@ -376,7 +384,17 @@ function pickOpt(ptid,oid){
   const val=picks(m)[ptid]===oid?null:oid, s={[ptid]:val};
   if(!m)for(const x of V.portate)if(x.opz.length===1&&x.id!==ptid)s[x.id]=x.opz[0].id;
   if(val&&pt.byId[oid].lib)for(const x of V.portate)if(x.id!==ptid)s[x.id]=null;
-  write(patchAt(p,d,pid,{v:vid,s}));
+  write(patchAt(p,d,pid,{v:vid,s,lib:null}));
+}
+/* Pasto libero (pranzo e cena): primo pulsante del pannello; se scelto, il resto si chiude.
+   Si salva come {lib:true}; i pasti liberi scelti come alimento (vecchio formato, compilazione automatica) valgono uguale. */
+const LIBERO=["pranzo","cena"];
+const isLibMeal=(p,pid,m)=>{if(!m)return false;if(m.lib)return true;const V=variantOf(p,pid,m);return !!(V&&isLib(V,picks(m)));};
+const libFreq=P=>{for(const V of P.varianti)for(const pt of V.portate)if(pt.freq&&pt.freq.libero)return pt.freq.libero;return null;};
+function libCount(p,pid){let c=0;for(let d=0;d<7;d++)if(isLibMeal(p,pid,mealOf(p,d,pid)))c++;return c;}
+function toggleLibero(){
+  const {p,d,pid}=sheetCtx, on=isLibMeal(p,pid,mealOf(p,d,pid));
+  write(patchAt(p,d,pid,on?null:{lib:true,v:null,s:null}));
 }
 function fillMeal(){
   const {p,d,pid}=sheetCtx,P=DIETE[p].pasti[pid],m=mealOf(p,d,pid);
@@ -410,6 +428,7 @@ document.addEventListener("click",e=>{
   else if(a==="cell")openSheet(b.dataset.p,+b.dataset.d,b.dataset.pid);
   else if(a==="close")closeSheet();
   else if(a==="variant")pickVariant(b.dataset.v);
+  else if(a==="libero")toggleLibero();
   else if(a==="opt")pickOpt(b.dataset.pt,b.dataset.o);
   else if(a==="clear-meal"){const {p,d,pid}=sheetCtx;write(patchAt(p,d,pid,null));}
   else if(a==="fill-meal")fillMeal();

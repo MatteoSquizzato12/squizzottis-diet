@@ -407,3 +407,9 @@ table.week tr.gap > td{height:12px;padding:0;border:0;background:transparent}
 /* Persone indicate solo dal bollino M / A e dal colore della fascia */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .rowh .badge{margin-right:0}
+/* Pulsante "Pasto libero" in cima al pannello di pranzo e cena */
+.libero-btn{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 12px;width:100%;margin:8px 0 12px;padding:12px 16px;border:2px dashed var(--yellow);border-radius:16px;background:transparent;cursor:pointer;text-align:left}
+.libero-btn b{font-family:var(--f-display);font-weight:800;text-transform:uppercase;letter-spacing:.03em;font-size:15px}
+.libero-btn .lib-hint{grid-column:1 / -1;font-size:12.5px;color:var(--muted)}
+.libero-btn[aria-pressed="true"]{background:var(--yellow);border-style:solid;color:#1E2021}
+.libero-btn[aria-pressed="true"] .lib-hint,.libero-btn[aria-pressed="true"] .vfq{color:#1E2021}
