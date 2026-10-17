@@ -256,7 +256,7 @@ const ICONE={
   merenda:'<circle cx="12" cy="12" r="8"/><path d="M9 9.5h.01M14.5 8.5h.01M13.5 14.5h.01M9 14h.01M16 12h.01"/>',
   cena:'<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/><path d="M17 4v3M15.5 5.5h3"/>'
 };
-const mealTitle=(pid,nome)=>`<span class="m-ico" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONE[pid]||""}</svg></span><span class="m-name">${nome}</span>`;
+const mealTitle=(pid,nome)=>`<span class="m-ico" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONE[pid]||""}</svg></span>${nome}`;
 const badge=p=>`<span class="badge" aria-hidden="true">${esc(DIETE[p].nome[0])}</span>`;
 function renderWeek(){
   const ti=todayIdx(), ps=persons();
