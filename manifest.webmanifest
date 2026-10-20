@@ -3,6 +3,7 @@
   "short_name": "Squizzotti's",
   "description": "Piano pasti della settimana e lista della spesa.",
   "lang": "it",
+  "id": "/squizzottis-diet/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
