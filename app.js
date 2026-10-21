@@ -4,8 +4,10 @@ const OLIO="Olio extravergine d'oliva", UOVA="Uova bio";
 const PEZZI={[UOVA]:{g:60,u:["uovo","uova"]}};
 const PERSONE=["matteo","anna"];
 const PASTI=[["colazione","Colazione"],["spuntino","Spuntino"],["pranzo","Pranzo"],["merenda","Merenda"],["cena","Cena"]];
-/* Le diete arrivano da Supabase (tabella "diete"): nel codice pubblico non ci sono dati personali. */
-let DIETE={};
+/* Le diete arrivano da Supabase (tabella "diete_versioni"): nel codice pubblico non ci sono dati personali.
+   Ogni persona può avere più versioni, ognuna valida da un lunedì in poi: DIETE è quella della settimana visualizzata. */
+let DIETE={}, VERS={}, versioni=true;
+const PRIMA="2000-01-03";
 
 /* ===================== APP ===================== */
 const GIORNI=["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
@@ -221,7 +223,7 @@ function renderAll(){
   const inp=$("extra-in"), typed=inp?inp.value:"", typing=inp&&document.activeElement===inp;
   $("main").innerHTML=S.tab==="piano"?renderPiano():S.tab==="spesa"?renderSpesa():renderAccount();
   const inp2=$("extra-in"); if(inp2){ if(typed)inp2.value=typed; if(typing)inp2.focus(); }
-  if(sheetCtx)renderSheet();
+  if(sheetCtx&&!sheetCtx.up)renderSheet();
 }
 function whoSeg(){
   return `<div class="seg" role="group" aria-label="Persona">${[["both","Entrambi"],["matteo","Matteo"],["anna","Anna"]].map(([k,l])=>`<button data-act="who" data-who="${k}" aria-pressed="${S.who===k}" class="${k!=="both"?"p-"+k:""}">${k!=="both"?'<span class="dot"></span>':""}${l}</button>`).join("")}</div>`;
@@ -231,6 +233,8 @@ function renderPiano(){
   let h=`<div class="toolbar piano-bar"><div class="tb-left">${whoSeg()}</div>
     <div class="seg tb-mid" role="group" aria-label="Vista"><button data-act="view" data-view="week" aria-pressed="${S.view==="week"}">Settimana</button><button data-act="view" data-view="day" aria-pressed="${S.view==="day"}">Giorno</button></div>
     <div class="tb-right"><button class="btn ghost${confirming?" danger":""}" data-act="clear-week">${confirming?"Tocca ancora per svuotare":"Svuota settimana"}</button></div></div>`;
+  const nuove=persons().filter(p=>(VERS[p]||[]).some((v,i)=>i>0&&v.dal===S.week));
+  if(nuove.length)h+=`<p class="banner">Da questa settimana ${nuove.map(p=>esc(DIETE[p].nome)).join(" e ")} ${nuove.length>1?"seguono":"segue"} la nuova dieta.</p>`;
   const wp=weekProgress(persons());
   if(wp.ok===wp.tot)h+=`<p class="banner">Piano della settimana completo. <button class="btn" data-act="tab" data-tab="spesa">Apri la lista della spesa</button></p>`;
   h+=S.view==="week"?renderWeek():renderDay();
@@ -321,15 +325,25 @@ function renderSpesa(){
   }
   return h+`</div>`;
 }
+const fmtDal=d=>{const x=parseISO(d),y=new Date().getFullYear();return `lunedì ${x.getDate()} ${MESI[x.getMonth()]}${x.getFullYear()!==y?" "+x.getFullYear():""}`;};
 function renderAccount(){
-  const day=s=>s?esc(new Date(s).toLocaleDateString("it-IT")):"–";
+  const day=s=>s?esc(new Date(s).toLocaleDateString("it-IT")):"–", oggi=iso(mondayOf(new Date()));
+  const confirming=id=>S.confirmDel&&S.confirmDel.id===id&&Date.now()-S.confirmDel.t<4000;
+  const fineIl=d=>{const x=addDays(parseISO(d),-1);return `domenica ${x.getDate()} ${MESI[x.getMonth()]}`;};
   return `<section class="card account"><h3>Account</h3>
     <div class="ck"><div class="ck-t">Accesso fatto come</div><div class="acc-mail">${esc(user?.email||"")}</div></div>
-    <div class="ck"><div class="ck-t">Piani alimentari</div>${PERSONE.map(p=>{const i=DIETE[p].info||{};
-      return `<div class="acc-row p-${p}"><span class="who"><span class="dot"></span>${esc(DIETE[p].nome)}</span><span>${esc(i.fonte||"PDF della nutrizionista")}<br><span class="hint">caricato nell'app il ${day(i.aggiornato)}</span></span></div>`;}).join("")}</div>
+    <div class="ck"><div class="ck-t">Piani alimentari</div>${PERSONE.map(p=>{
+      const L=VERS[p]||[], cur=versioneDi(p,oggi), dopo=L.filter(v=>v.dal>oggi);
+      return `<div class="acc-row p-${p}"><span class="who"><span class="dot"></span>${esc(DIETE[p].nome)}</span><div class="acc-vers">
+        <span>${esc(cur.fonte||"PDF della nutrizionista")}<br><span class="hint">in uso${cur.dal>PRIMA?" da "+fmtDal(cur.dal):""}${dopo.length?" fino a "+fineIl(dopo[0].dal):""} · caricato il ${day(cur.caricato)}</span></span>
+        ${dopo.map(v=>`<span class="acc-next"><span>${esc(v.fonte||"PDF della nutrizionista")}<br><span class="hint">da ${fmtDal(v.dal)} · caricato il ${day(v.caricato)}</span></span>${versioni&&v.id?`<button class="btn ghost sm${confirming(v.id)?" danger":""}" data-act="ver-del" data-id="${v.id}">${confirming(v.id)?"Tocca ancora":"Elimina"}</button>`:""}</span>`).join("")}
+      </div></div>`;}).join("")}
+      <div class="acc-up"><button class="btn" data-act="upload-open"${versioni?"":" disabled"}>Carica nuova dieta</button>
+      <span class="hint">${versioni?"Il PDF della nutrizionista: poi scegli da che lunedì vale.":"Prima va aggiornato il database Supabase (supabase/versioni-diete.sql)."}</span></div></div>
     <div class="sh-foot"><button class="btn ghost" data-act="logout">Log out</button></div></section>`;
 }
 function renderSheet(){
+  if(sheetCtx.up){renderUpload();return;}
   const {p,d,pid}=sheetCtx, P=DIETE[p].pasti[pid], m=mealOf(p,d,pid);
   const vid=m?m.v:(P.varianti.length===1?P.varianti[0].id:null);
   const V=vid?P.varianti.find(v=>v.id===vid):null, s=picks(m);
@@ -367,6 +381,89 @@ function renderPortata(p,pid,V,pt,s){
   const so=pt.byId[sel];
   if(so){if(so.w)h+=`<p class="warnline">${esc(so.w)}</p>`;const r=DIETE[p].ricette[so.n];if(r)h+=`<p class="ricetta">Ricetta della nutrizionista, in lista spesa: ${r.map(([n,g])=>esc(n)+" "+g+" g").join(", ")}.</p>`;}
   return h+`</section>`;
+}
+
+/* ---------- nuova dieta dal PDF ---------- */
+/* Il PDF si legge nel telefono (dieta-pdf.js + PDF.js); si salva solo la dieta già convertita, con il lunedì da cui vale. */
+const PDFJS="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/";
+let pdfjsP=null;
+function loadPdfJs(){
+  return pdfjsP||(pdfjsP=new Promise((ok,ko)=>{
+    const sc=document.createElement("script"); sc.src=PDFJS+"pdf.min.js";
+    sc.onload=()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+"pdf.worker.min.js";ok(window.pdfjsLib);};
+    sc.onerror=()=>{pdfjsP=null;ko(new Error("pdfjs"));};
+    document.head.appendChild(sc);
+  }));
+}
+function versioneDi(p,week){const L=VERS[p]||[];let v=L[0];for(const x of L)if(x.dal<=week)v=x;return v;}
+function dieteDi(week){const o={};for(const p of PERSONE)if(VERS[p]&&VERS[p].length)o[p]=versioneDi(p,week).D;return o;}
+function prevFor(p,dal){const L=VERS[p]||[];let v=null;for(const x of L)if(x.dal<dal)v=x;return (v||L[0]||{}).raw||null;}
+function lunediScelta(){const m=mondayOf(new Date()),o=[];for(let i=0;i<=12;i++)o.push(iso(addDays(m,7*i)));return o;}
+function openUpload(){
+  const own=LS.get("persona:"+user.id), t=new Date();
+  sheetCtx={up:true,p:PERSONE.includes(own)?own:S.who!=="both"?S.who:PERSONE[0],dal:iso(addDays(mondayOf(t),(t.getDay()+6)%7===0?0:7)),S:null};
+  $("overlay").hidden=false;document.body.style.overflow="hidden";$("sheet").scrollTop=0;renderUpload();$("sheet-close")?.focus();
+}
+function upCompute(){
+  const u=sheetCtx, prev=prevFor(u.p,u.dal);
+  try{u.res=DietaPDF.converti(u.S,prev);u.diff=DietaPDF.confronta(prev,u.res.dieta);u.err="";}
+  catch(e){u.res=null;u.err=e&&e.message||"Non riesco a leggere questo PDF.";}
+}
+async function upRead(file){
+  const u=sheetCtx; if(!u||!u.up||!file)return;
+  u.busy=true;u.err="";u.file=file.name;renderUpload();
+  try{
+    const lib=await loadPdfJs();
+    u.S=DietaPDF.struttura(await DietaPDF.estrai(lib,new Uint8Array(await file.arrayBuffer())));
+    const paz=u.S.info.paziente.toLowerCase().split(/\s+/), chi=PERSONE.find(p=>DIETE[p]&&paz.includes(DIETE[p].nome.toLowerCase()));
+    if(chi)u.p=chi;
+    upCompute();
+  }catch(e){u.S=null;u.err=e&&e.message==="pdfjs"?"Serve la connessione per leggere il PDF.":"Questo file non sembra un PDF leggibile.";}
+  u.busy=false; if(sheetCtx===u)renderUpload();
+}
+async function upSave(){
+  const u=sheetCtx; if(!u||!u.res||u.busy)return;
+  const i=u.S.info, fonte=`PDF ${i.studio||"della nutrizionista"} del ${i.data||new Date().toLocaleDateString("it-IT")}`;
+  u.busy=true;renderUpload();
+  const {error}=await sb.from("diete_versioni").upsert({persona:u.p,dal:u.dal,dieta:u.res.dieta,fonte},{onConflict:"persona,dal"});
+  u.busy=false;
+  if(error){u.err=netErr(error)?"Senza rete: la dieta non è stata salvata, riprova.":"Salvataggio non riuscito: "+(error.message||"riprova.");if(sheetCtx===u)renderUpload();return;}
+  if(sheetCtx===u)closeSheet();
+  toast(`Dieta di ${DIETE[u.p].nome} salvata: vale da ${fmtDal(u.dal)}.`);
+  await loadDiete();
+}
+function renderUpload(){
+  const u=sheetCtx, nome=p=>esc(DIETE[p]?DIETE[p].nome:p);
+  let h=`<div class="sh-head"><div><div class="eyebrow">PDF della nutrizionista</div><h2>Nuova dieta</h2></div><button class="iconbtn" data-act="close" aria-label="Chiudi" id="sheet-close">×</button></div>`;
+  if(!u.S){
+    h+=`<p class="hint">Scegli il PDF che ha mandato la nutrizionista. Lo legge il telefono, il file non viene caricato da nessuna parte. Prima di salvare vedi cosa cambia.</p>`;
+    h+=u.busy?`<p class="up-busy">Leggo il PDF…</p>`:`<label class="btn up-file">Scegli il PDF<input type="file" accept="application/pdf,.pdf" data-file="dieta"></label>`;
+    if(u.err)h+=`<p class="warnline">${esc(u.err)}</p>`;
+    h+=`<div class="sh-foot"><button class="btn ghost" data-act="close">Annulla</button></div>`;
+  } else {
+    const i=u.S.info, paz=i.paziente, giaC=(VERS[u.p]||[]).some(v=>v.dal===u.dal&&v.dal>PRIMA), oggi=iso(mondayOf(new Date()));
+    h+=`<p class="hint up-src">${esc(u.file||"PDF")}${i.data?" · del "+esc(i.data):""}${paz?" · intestato a "+esc(paz):""}</p>`;
+    h+=`<div class="up-row"><span class="up-l">Dieta di</span><div class="seg" role="group" aria-label="Persona">${PERSONE.map(p=>`<button data-act="up-who" data-who="${p}" aria-pressed="${u.p===p}" class="p-${p}"><span class="dot"></span>${nome(p)}</button>`).join("")}</div></div>`;
+    h+=`<label class="up-row"><span class="up-l">Vale da</span><select class="up-sel" data-change="up-dal">${lunediScelta().map(d=>`<option value="${d}"${d===u.dal?" selected":""}>${fmtDal(d)}${d===oggi?" (questa settimana)":""}</option>`).join("")}</select></label>`;
+    if(paz&&DIETE[u.p]&&!paz.toLowerCase().split(/\s+/).includes(DIETE[u.p].nome.toLowerCase()))h+=`<p class="warnline">Il PDF è intestato a ${esc(paz)}: controlla di chi è la dieta.</p>`;
+    h+=`<p class="hint">Fino alla settimana prima resta la dieta di adesso${giaC?"; questa sostituisce quella già caricata per la stessa data":""}.</p>`;
+    if(u.err)h+=`<p class="warnline">${esc(u.err)}</p>`;
+    if(u.res){
+      const P=u.res.dieta.pasti;
+      h+=`<p class="hint">Pasti: ${Object.values(P).map(x=>esc(x.nome)+(x.varianti.length>1?` (${x.varianti.length} varianti)`:"")).join(" · ")}</p>`;
+      for(const a of u.res.avvisi)h+=`<p class="warnline">${esc(a)}</p>`;
+      h+=`<section class="up-diff"><h3>Cosa cambia</h3>`;
+      h+=u.diff.length?u.diff.map(g=>`<div class="up-g"><b>${esc(g.pasto)}</b><ul>${g.righe.map(r=>`<li>${esc(r)}</li>`).join("")}</ul></div>`).join(""):`<p class="hint">Nessuna differenza rispetto alla dieta di prima.</p>`;
+      h+=`</section>`;
+    }
+    h+=`<div class="sh-foot"><button class="btn ghost" data-act="up-reset">Altro PDF</button><button class="btn ghost" data-act="close">Annulla</button><button class="btn" data-act="up-save"${!u.res||u.busy?" disabled":""}>${u.busy?"Salvo…":"Salva per "+nome(u.p)}</button></div>`;
+  }
+  const sh=$("sheet"), y=sh.scrollTop; sh.innerHTML=h; sh.scrollTop=y;
+}
+async function delVersione(id){
+  const {error}=await sb.from("diete_versioni").delete().eq("id",id);
+  if(error){toast("Non riesco a eliminarla, riprova.");return;}
+  toast("Dieta eliminata."); await loadDiete();
 }
 
 /* ---------- azioni ---------- */
@@ -420,11 +517,18 @@ document.addEventListener("click",e=>{
   const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act;
   if(a==="logout"){signOut();return;}
   if(!ready)return;
+  if(a==="upload-open"){openUpload();return;}
+  if(sheetCtx&&sheetCtx.up){
+    if(a==="up-who"){sheetCtx.p=b.dataset.who;upCompute();renderUpload();return;}
+    if(a==="up-reset"){sheetCtx.S=null;sheetCtx.res=null;sheetCtx.err="";renderUpload();return;}
+    if(a==="up-save"){upSave();return;}
+  }
+  if(a==="ver-del"){const id=+b.dataset.id;if(S.confirmDel&&S.confirmDel.id===id&&Date.now()-S.confirmDel.t<4000){S.confirmDel=null;delVersione(id);}else{S.confirmDel={id,t:Date.now()};renderAll();setTimeout(renderAll,4100);}return;}
   if(a==="tab"){S.tab=b.dataset.tab;renderAll();}
   else if(a==="who"){S.who=b.dataset.who;setPref("who",S.who);renderAll();}
   else if(a==="view"){S.view=b.dataset.view;setPref("view",S.view);renderAll();}
   else if(a==="day"){S.day=+b.dataset.d;renderAll();}
-  else if(a==="week-prev"||a==="week-next"){S.week=iso(addDays(parseISO(S.week),a==="week-prev"?-7:7));const ti=todayIdx();S.day=ti>=0?ti:0;closeSheet();subscribe();}
+  else if(a==="week-prev"||a==="week-next"){S.week=iso(addDays(parseISO(S.week),a==="week-prev"?-7:7));DIETE=dieteDi(S.week);const ti=todayIdx();S.day=ti>=0?ti:0;closeSheet();subscribe();}
   else if(a==="cell")openSheet(b.dataset.p,+b.dataset.d,b.dataset.pid);
   else if(a==="close")closeSheet();
   else if(a==="variant")pickVariant(b.dataset.v);
@@ -444,6 +548,8 @@ document.addEventListener("submit",e=>{
   e.preventDefault(); addExtra(); $("extra-in")?.focus();
 });
 document.addEventListener("change",e=>{
+  if(e.target.dataset&&e.target.dataset.file==="dieta"){upRead(e.target.files&&e.target.files[0]);return;}
+  if(e.target.dataset&&e.target.dataset.change==="up-dal"&&sheetCtx&&sheetCtx.up){sheetCtx.dal=e.target.value;upCompute();renderUpload();return;}
   const k=e.target.dataset&&e.target.dataset.check;if(k)write({spesa:{[k]:e.target.checked?true:null}});
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheetCtx)closeSheet();});
@@ -456,15 +562,21 @@ function applyDiete(rows){
     if(!PERSONE.includes(r.persona)||!r.dieta||!r.dieta.pasti)continue;
     const D=clone(r.dieta); D.nome=D.nome||r.persona[0].toUpperCase()+r.persona.slice(1);
     for(const pid in D.pasti)for(const V of D.pasti[pid].varianti)for(const pt of V.portate)if(pt.noShop)pt.mini=true;
-    normalizeDiet(D); D.info={aggiornato:r.aggiornato||"",fonte:r.fonte||""}; next[r.persona]=D;
+    normalizeDiet(D);
+    (next[r.persona]=next[r.persona]||[]).push({id:r.id||null,dal:r.dal||PRIMA,D,raw:r.dieta,fonte:r.fonte||"",caricato:r.caricato||r.aggiornato||""});
   }
   if(!PERSONE.every(p=>next[p]))return false;
-  DIETE=next; ready=true; return true;
+  for(const p in next)next[p].sort((a,b)=>a.dal<b.dal?-1:a.dal>b.dal?1:0);
+  VERS=next; DIETE=dieteDi(S.week); ready=true; return true;
 }
 async function loadDiete(){
-  const {data,error}=await sb.from("diete").select("persona,dieta,aggiornato,fonte");
+  let {data,error}=await sb.from("diete_versioni").select("id,persona,dal,dieta,fonte,caricato");
+  // Database non ancora aggiornato (manca la tabella delle versioni): si usano le diete di prima, senza caricamento.
+  if(error&&!netErr(error)&&/diete_versioni|42P01|PGRST20/i.test((error.code||"")+" "+(error.message||""))){
+    versioni=false; ({data,error}=await sb.from("diete").select("persona,dieta,aggiornato,fonte"));
+  } else if(!error) versioni=true;
   if(error){ if(!ready){ sync="local"; loadMsg="Non riesco a caricare i piani: controlla la connessione e riapri l'app."; } renderAll(); return; }
-  if(applyDiete(data)){ LS.set("diete",data); if(sheetCtx&&!DIETE[sheetCtx.p].pasti[sheetCtx.pid])closeSheet(); }
+  if(applyDiete(data)){ LS.set("diete",data); if(sheetCtx&&!sheetCtx.up&&!DIETE[sheetCtx.p].pasti[sheetCtx.pid])closeSheet(); }
   else if(!ready){
     const {data:me}=await sb.from("membri").select("persona").eq("user_id",user.id).maybeSingle();
     const mail=esc(user.email||"");
@@ -496,6 +608,7 @@ async function start(){
   chan=sb.channel("app")
     .on("postgres_changes",{event:"*",schema:"public",table:"settimane"},p=>{const r=p.new;if(r&&r.settimana===S.week&&!queue.some(q=>q.week===S.week))applyRemote(S.week,r.dati);})
     .on("postgres_changes",{event:"*",schema:"public",table:"diete"},()=>loadDiete())
+    .on("postgres_changes",{event:"*",schema:"public",table:"diete_versioni"},()=>loadDiete())
     .subscribe(st=>{if(st==="SUBSCRIBED"&&user)fetchWeek(S.week);});
   pump();
 }
@@ -503,7 +616,7 @@ async function signOut(){
   try{ await sb.auth.signOut({scope:"local"}); }catch(e){}
   try{ for(const k of Object.keys(localStorage)) if(/^sb-.*-auth-token/.test(k)) localStorage.removeItem(k); }catch(e){}
   if(chan){ sb.removeChannel(chan); chan=null; }
-  queue.length=0; LS.clear(); DIETE={}; ready=false; plan=emptyPlan(); user=null; closeSheet();
+  queue.length=0; LS.clear(); DIETE={}; VERS={}; ready=false; plan=emptyPlan(); user=null; closeSheet();
   showLogin();
 }
 $("login-form").addEventListener("submit",async e=>{

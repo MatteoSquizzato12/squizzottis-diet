@@ -413,3 +413,25 @@ table.week tr.gap > td{height:12px;padding:0;border:0;background:transparent}
 .libero-btn .lib-hint{grid-column:1 / -1;font-size:12.5px;color:var(--muted)}
 .libero-btn[aria-pressed="true"]{background:var(--yellow);border-style:solid;color:#1E2021}
 .libero-btn[aria-pressed="true"] .lib-hint,.libero-btn[aria-pressed="true"] .vfq{color:#1E2021}
+
+/* Account: versioni delle diete e caricamento del PDF */
+.acc-vers{display:flex;flex-direction:column;gap:8px;min-width:0}
+.acc-next{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.btn.sm{padding:6px 10px;font-size:11.5px;flex:none}
+.acc-up{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding-top:12px}
+.acc-up .hint{font-size:12.5px;flex:1 1 200px}
+
+/* Pannello "Nuova dieta" */
+.up-file{position:relative;overflow:hidden;display:inline-block;margin:8px 0 4px}
+.up-file input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.up-busy{font-weight:600;margin:12px 0}
+.up-src{font-size:13px;overflow-wrap:anywhere;margin:0 0 10px}
+.up-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:10px 0}
+.up-l{font-size:13px;font-weight:600;min-width:64px}
+.up-sel{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:8px 10px;max-width:100%}
+.up-sel:focus{border-color:var(--yellow);outline:none}
+.up-diff{border-top:1px solid var(--line);margin-top:14px;padding-top:10px}
+.up-diff h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 6px;font-weight:700}
+.up-g{font-size:14px;margin:8px 0}
+.up-g ul{margin:4px 0 0;padding-left:18px}
+.up-g li{margin:3px 0}

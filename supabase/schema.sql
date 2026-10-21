@@ -101,3 +101,6 @@ do $$ begin
     alter publication supabase_realtime add table public.diete;
   end if;
 end $$;
+
+-- ---------- Diete con data di inizio ----------
+-- Dopo questo file eseguire anche supabase/versioni-diete.sql (tabella diete_versioni, usata dal pulsante "Carica nuova dieta").
